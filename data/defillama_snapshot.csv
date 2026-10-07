@@ -1,0 +1,5 @@
+protocol,chain,asset,market_label,defillama_pool_id,rate_type,rate_pct,tvl_usd,outstanding_debt_usd,source
+aave-v3,Ethereum,USDC,USDC,6f00d46b-8735-49ae-9ced-2a0fccc56ad0,supply APY (not borrow rate),13.97978,57821478,,https://yields.llama.fi/pools
+compound-v3,Ethereum,USDC,USDC,7da72d09-56ca-4ec5-a45f-59114353e487,supply APY (not borrow rate),3.23818,38810402,,https://yields.llama.fi/pools
+sparklend,Ethereum,USDC,USDC,65ce8276-b4d9-41ba-9f6f-21fc374cf9bc,supply APY (not borrow rate),3.39078,4101405,,https://yields.llama.fi/pools
+morpho-blue,Ethereum,USDC,STEAKUSDC,931ea9be-5f4d-428e-beaf-205fc5b4e2b5,supply APY (not borrow rate),4.45502,113744838,,https://yields.llama.fi/pools

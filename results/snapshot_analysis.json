@@ -1,0 +1,75 @@
+{
+  "input": "data/defillama_snapshot.csv",
+  "observations": 4,
+  "rate_types": [
+    "supply APY (not borrow rate)"
+  ],
+  "tvl_weighted": {
+    "base": {
+      "benchmark_rate_pct": 6.7822726119990335,
+      "cross_sectional_dispersion_pp": 4.396716369171063,
+      "hhi": 0.3870422919453267,
+      "effective_sources": 2.5836969778518655,
+      "weights": [
+        0.2695914958188999,
+        0.18095273054958616,
+        0.01912271956986494,
+        0.530333054061649
+      ]
+    },
+    "rate_shock_sensitivity": [
+      {
+        "protocol": "aave-v3",
+        "shock_pp": 1.0,
+        "benchmark_delta_pp": 0.26959149581889896
+      },
+      {
+        "protocol": "compound-v3",
+        "shock_pp": 1.0,
+        "benchmark_delta_pp": 0.1809527305495866
+      },
+      {
+        "protocol": "sparklend",
+        "shock_pp": 1.0,
+        "benchmark_delta_pp": 0.019122719569864444
+      },
+      {
+        "protocol": "morpho-blue",
+        "shock_pp": 1.0,
+        "benchmark_delta_pp": 0.5303330540616482
+      }
+    ],
+    "weight_inflation_sensitivity": [
+      {
+        "protocol": "aave-v3",
+        "weight_multiplier": 2.0,
+        "benchmark_delta_pp": 1.5283552144835326,
+        "hhi": 0.3753924363443311,
+        "effective_sources": 2.663878925580545
+      },
+      {
+        "protocol": "compound-v3",
+        "weight_multiplier": 2.0,
+        "benchmark_delta_pp": -0.5430473370118625,
+        "hhi": 0.3479541028730011,
+        "effective_sources": 2.873942257737905
+      },
+      {
+        "protocol": "sparklend",
+        "weight_multiplier": 2.0,
+        "benchmark_delta_pp": -0.06363763744752937,
+        "hhi": 0.37370996766777986,
+        "effective_sources": 2.675871896703003
+      },
+      {
+        "protocol": "morpho-blue",
+        "weight_multiplier": 2.0,
+        "benchmark_delta_pp": -0.8065035137407923,
+        "hhi": 0.5255525925145433,
+        "effective_sources": 1.9027591419831642
+      }
+    ]
+  },
+  "debt_weighted": null,
+  "debt_status": "unavailable: outstanding_debt_usd must be populated for every matched observation"
+}
