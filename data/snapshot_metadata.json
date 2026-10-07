@@ -1,0 +1,86 @@
+{
+  "scope": "Ethereum, USDC loan asset; borrow-positive pools/markets only",
+  "pool_list_received_at_utc": "2026-10-07T00:39:47.347800+00:00",
+  "lend_borrow_received_at_utc": "2026-10-07T00:39:50.478698+00:00",
+  "morpho_query_received_at_utc": [
+    "2026-10-07T00:39:51.984070+00:00",
+    "2026-10-07T00:39:54.936963+00:00"
+  ],
+  "input_pool_count": 126,
+  "counts_by_protocol": {
+    "aave-v3": 3,
+    "compound-v3": 1,
+    "morpho-blue": 121,
+    "sparklend": 1
+  },
+  "excluded_count": 13,
+  "excluded": [
+    {
+      "protocol": "aave-v3",
+      "source_id": "6f00d46b-8735-49ae-9ced-2a0fccc56ad0",
+      "reason": "no matching public lendBorrow row"
+    },
+    {
+      "protocol": "compound-v3",
+      "source_id": "f6c2fec8-dd63-4163-bd53-04b8ac48266e",
+      "reason": "missing borrow rate, debt, or TVL"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x54efdee08e272e929034a8f26f7ca34b1ebe364b275391169b28c6d7db24dbc8",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x9bc98c2f20ac58287ef2c860eea53a2fdc27c17a7817ff1206c0b7840cc7cd79",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x0ff9c1f2b9cb037ecb14029cbacd3a94470458cf5c6884f09c46ae354765d789",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x3c2ce083d3ac6329ae69fd68bf23d4fada5587271860d987788dfd4f0ac3b5f0",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x9972be1fc530a3f5a34db25ee8ab4962cc4099cb65b2db22897c92cc9d22f59f",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x27b9a0a5bfee98a31eb51e3850250d103a9f8e41673c782defc66aa943af0e65",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x245859412ff82dabcea25ddab15fe5ee5650e20b1af05f65ea1bd8db96416522",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0xeb17955ea422baeddbfb0b8d8c9086c5be7a9cfdefb292119a102e981a30062e",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x8ab1b309944e0da2f85cec2aae47317c086dac72e6fd635b45c94d1294e3d674",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x702b7ec7628de2622e51e1bb34a7e6ad9e95f3a25a2ed361e4ce621f23f5e642",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    },
+    {
+      "protocol": "morpho-blue",
+      "source_id": "0x2015b0fa3d69301a0f258aa1c8b7da4769992e1bc01a0e63064154420e438a7b",
+      "reason": "zero/negative balance or rate outside 0-500%"
+    }
+  ],
+  "rate_note": "DeFiLlama borrow APY excludes rewards; Morpho borrowApy fraction converted to percent.",
+  "weight_note": "DeFiLlama lending tvlUsd is net supplied capital (totalSupplyUsd - totalBorrowUsd). Morpho net TVL is computed the same way."
+}

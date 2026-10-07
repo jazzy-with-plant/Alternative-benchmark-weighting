@@ -38,49 +38,71 @@ def weighted_metrics(rows, weight_field):
     rates = [r["rate_pct"] for r in rows]
     mean = sum(w * x for w, x in zip(normalized, rates))
     dispersion = math.sqrt(sum(w * (x - mean) ** 2 for w, x in zip(normalized, rates)))
-    hhi = sum(w * w for w in normalized)
+    source_hhi = sum(w * w for w in normalized)
+    protocol_weights = {}
+    for row, weight in zip(rows, normalized):
+        protocol_weights[row["protocol"]] = protocol_weights.get(row["protocol"], 0.0) + weight
+    protocol_hhi = sum(w * w for w in protocol_weights.values())
+    protocol_rates = {}
+    for protocol in protocol_weights:
+        selected = [(row, weight) for row, weight in zip(rows, weights) if row["protocol"] == protocol]
+        protocol_rates[protocol] = sum(row["rate_pct"] * weight for row, weight in selected) / sum(weight for _, weight in selected)
+    between_protocol_dispersion = math.sqrt(sum(protocol_weights[p] * (protocol_rates[p] - mean) ** 2 for p in protocol_weights))
+    # Within-protocol aggregation uses the same weighting scheme; this gives one shock/sensitivity row per protocol.
     return {"benchmark_rate_pct": mean, "cross_sectional_dispersion_pp": dispersion,
-            "hhi": hhi, "effective_sources": 1 / hhi, "weights": normalized}
+            "cross_protocol_dispersion_pp": between_protocol_dispersion,
+            "source_hhi": source_hhi, "effective_sources": 1 / source_hhi,
+            "protocol_hhi": protocol_hhi, "effective_protocols": 1 / protocol_hhi,
+            "protocol_weights": protocol_weights, "protocol_rates_pct": protocol_rates,
+            "weights": normalized}
 
 
 def run_sensitivities(rows, field, shock_pp=1.0, multiplier=2.0):
     base = weighted_metrics(rows, field)
     rate_shocks, weight_inflation = [], []
-    for idx, row in enumerate(rows):
+    for protocol in sorted({row["protocol"] for row in rows}):
         shocked = [dict(r) for r in rows]
-        shocked[idx]["rate_pct"] += shock_pp
-        rate_shocks.append({"protocol": row["protocol"], "shock_pp": shock_pp,
+        for row in shocked:
+            if row["protocol"] == protocol:
+                row["rate_pct"] += shock_pp
+        rate_shocks.append({"protocol": protocol, "shock_pp": shock_pp,
                             "benchmark_delta_pp": weighted_metrics(shocked, field)["benchmark_rate_pct"] - base["benchmark_rate_pct"]})
         inflated = [dict(r) for r in rows]
-        inflated[idx][field] *= multiplier
+        for row in inflated:
+            if row["protocol"] == protocol:
+                row[field] *= multiplier
         updated = weighted_metrics(inflated, field)
-        weight_inflation.append({"protocol": row["protocol"], "weight_multiplier": multiplier,
+        weight_inflation.append({"protocol": protocol, "weight_multiplier": multiplier,
                                  "benchmark_delta_pp": updated["benchmark_rate_pct"] - base["benchmark_rate_pct"],
-                                 "hhi": updated["hhi"], "effective_sources": updated["effective_sources"]})
+                                 "protocol_hhi": updated["protocol_hhi"], "effective_protocols": updated["effective_protocols"]})
     return {"base": base, "rate_shock_sensitivity": rate_shocks,
             "weight_inflation_sensitivity": weight_inflation}
 
 
-def write_svg(rows, metrics, path):
-    """Write a small dependency-free chart of observed proxy APY and TVL share."""
-    width, height = 960, 520
-    left, right, top, bottom = 250, 40, 85, 70
-    plot_w, plot_h = width - left - right, height - top - bottom
-    max_rate = max(r["rate_pct"] for r in rows) or 1
-    max_rate = math.ceil(max_rate / 2) * 2
+def write_svg(tvl_result, debt_result, path):
+    """Write protocol-level rate and weighting comparison as dependency-free SVG."""
+    width, height = 1050, 450
+    protocols = sorted(tvl_result["protocol_weights"])
+    max_share = max(max(tvl_result["protocol_weights"].values()), max(debt_result["protocol_weights"].values()))
+    max_rate = max(max(tvl_result["protocol_rates_pct"].values()), max(debt_result["protocol_rates_pct"].values()))
     bars = []
-    for i, row in enumerate(rows):
-        y = top + i * (plot_h / len(rows))
-        bar_w = row["rate_pct"] / max_rate * plot_w
-        share = metrics["weights"][i] * 100
-        bars.append(f'<text x="{left-12}" y="{y+28:.1f}" text-anchor="end" class="label">{row["protocol"]}</text>')
-        bars.append(f'<rect x="{left}" y="{y+6:.1f}" width="{bar_w:.1f}" height="30" rx="4" fill="#3767c7"/>')
-        bars.append(f'<text x="{left+bar_w+10:.1f}" y="{y+27:.1f}" class="value">{row["rate_pct"]:.2f}% APY · {share:.1f}% TVL share</text>')
+    for i, protocol in enumerate(protocols):
+        y = 110 + i * 72
+        tvl_share = tvl_result["protocol_weights"][protocol]
+        debt_share = debt_result["protocol_weights"][protocol]
+        tvl_rate = tvl_result["protocol_rates_pct"][protocol]
+        debt_rate = debt_result["protocol_rates_pct"][protocol]
+        tx = 275 + tvl_share / max_share * 300
+        dx = 275 + debt_share / max_share * 300
+        bars.append(f'<text x="255" y="{y+21}" text-anchor="end" class="label">{protocol}</text>')
+        bars.append(f'<rect x="275" y="{y}" width="{tvl_share/max_share*300:.1f}" height="20" rx="3" fill="#3778c2"/><text x="{tx+8:.1f}" y="{y+15}" class="value">{tvl_share*100:.1f}% · {tvl_rate:.2f}% rate</text>')
+        bars.append(f'<rect x="275" y="{y+27}" width="{debt_share/max_share*300:.1f}" height="20" rx="3" fill="#e27b3f"/><text x="{dx+8:.1f}" y="{y+42}" class="value">{debt_share*100:.1f}% · {debt_rate:.2f}% rate</text>')
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-<style>text{{font-family:Inter,Arial,sans-serif;fill:#172033}}.title{{font-size:24px;font-weight:700}}.sub{{font-size:13px;fill:#4b5563}}.label{{font-size:14px}}.value{{font-size:13px}}.foot{{font-size:12px;fill:#5b6473}}</style>
-<rect width="100%" height="100%" fill="#fff"/><text x="32" y="40" class="title">Ethereum USDC lending pools: supply APY and TVL share</text>
-<text x="32" y="64" class="sub">DeFiLlama snapshot · one selected pool per venue · supply-side proxy, not DeBOR borrow rates</text>
-{''.join(bars)}<text x="32" y="{height-26}" class="foot">Outstanding debt is unavailable in this endpoint; no debt-weighted comparison is inferred.</text></svg>'''
+<style>text{{font-family:Inter,Arial,sans-serif;fill:#172033}}.title{{font-size:23px;font-weight:700}}.sub{{font-size:13px;fill:#4b5563}}.label{{font-size:14px}}.value{{font-size:12px}}.foot{{font-size:12px;fill:#5b6473}}</style>
+<rect width="100%" height="100%" fill="#fff"/><text x="30" y="38" class="title">Ethereum USDC borrow benchmark: TVL vs outstanding-debt weights</text>
+<text x="30" y="62" class="sub">Same market rates, 7 October 2026 UTC snapshot · rate labels show the corresponding weighted rate within each protocol</text>
+<rect x="30" y="82" width="14" height="14" fill="#3778c2"/><text x="50" y="94" class="sub">Net TVL weight</text><rect x="155" y="82" width="14" height="14" fill="#e27b3f"/><text x="175" y="94" class="sub">Outstanding debt weight</text>
+{''.join(bars)}<text x="30" y="{height-20}" class="foot">Benchmark: {tvl_result['benchmark_rate_pct']:.2f}% (TVL) vs {debt_result['benchmark_rate_pct']:.2f}% (debt). Results are an empirical snapshot, not a time-series backtest.</text></svg>'''
     path.write_text(svg, encoding="utf-8")
 
 
@@ -100,13 +122,23 @@ def main():
     if all(d is not None and d >= 0 for d in debts) and sum(debts) > 0:
         output["debt_weighted"] = run_sensitivities(rows, "outstanding_debt_usd")
         output["debt_status"] = "calculated"
+        caps = []
+        for cap in (10, 15, 20, 25, 500):
+            selected = [r for r in rows if r["rate_pct"] <= cap]
+            tvl_rate = weighted_metrics(selected, "tvl_usd")["benchmark_rate_pct"]
+            debt_rate = weighted_metrics(selected, "outstanding_debt_usd")["benchmark_rate_pct"]
+            caps.append({"max_rate_pct": cap, "observations": len(selected),
+                         "tvl_weighted_rate_pct": tvl_rate, "debt_weighted_rate_pct": debt_rate,
+                         "difference_pp": debt_rate - tvl_rate})
+        output["rate_cap_sensitivity"] = caps
     outpath = args.out / "snapshot_analysis.json"
     outpath.write_text(json.dumps(output, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    write_svg(rows, output["tvl_weighted"]["base"], args.out / "snapshot.svg")
+    if output["debt_weighted"]:
+        write_svg(output["tvl_weighted"]["base"], output["debt_weighted"]["base"], args.out / "weighting_comparison.svg")
     base = output["tvl_weighted"]["base"]
     print(f"TVL-weighted rate: {base['benchmark_rate_pct']:.4f}%")
-    print(f"Cross-sectional dispersion: {base['cross_sectional_dispersion_pp']:.4f} pp")
-    print(f"HHI: {base['hhi']:.4f} (effective sources: {base['effective_sources']:.2f})")
+    print(f"Cross-source dispersion: {base['cross_sectional_dispersion_pp']:.4f} pp")
+    print(f"Protocol HHI: {base['protocol_hhi']:.4f} (effective protocols: {base['effective_protocols']:.2f})")
     print(f"Debt-weighted: {output['debt_status']}")
     print(f"Wrote {outpath}")
 
